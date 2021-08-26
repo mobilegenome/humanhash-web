@@ -3,34 +3,33 @@ import humanhash
 
 
 urls = (
-    '/(.+)', 'hash'
+    '/hash', 'hash',
+    '/hash/([0-9]*)', 'hash',  # set number of hashes to return
+    '/hash/([0-9]*)/length/([1234]{1})', 'hash'  # set hash length
 )
 
+max_multi_hash = 256
 app = web.application(urls, globals())
 
-def generate_human_hash():
+def generate_human_hash(n_words):
     huuid = humanhash.uuid()[0] # generate humanhash, extract words, not UUID
     hhuid_sep = huuid.split("-") # split words
-    hhash = "-".join(hhuid_sep[:2]).strip() + "\n" # two-word hash
+    hhash = "-".join(hhuid_sep[:n_words]).strip() + "\n" # two-word hash
     return hhash
 
 
 class hash:
-    def GET(self, args):
+    def GET(self, n_hash=1, length=2):
         output = []
-        if not args.strip("/").endswith("hash"):
-            try:
-                n_hash = int(args.split("/")[-1])
-                if n_hash > 0 and n_hash < 256:
-                    for _ in range(n_hash):
-                        output.append(generate_human_hash())
-                else:
-                    output.append("Out of parameter space")
-            except ValueError as e:
-                print(e)
-                pass # not covertable
-        else:
-            output.append(generate_human_hash())
+        try:
+            n_hash = int(n_hash)
+            length = int(length)
+            if n_hash > 0 and n_hash < max_multi_hash:
+                for _ in range(n_hash):
+                    output.append(generate_human_hash(n_words=length))
+        except ValueError as e:
+            print(e)
+            pass # not covertable
         return "".join(output)
 
 if __name__ == "__main__":
